@@ -1,5 +1,6 @@
 import {
   IAgentForm,
+  ICategorizeForm,
   ICategorizeItem,
   ICategorizeItemResult,
 } from '@/interfaces/database/agent';
@@ -149,13 +150,51 @@ function buildAgentTools(edges: Edge[], nodes: Node[], nodeId: string) {
 
     (params as IAgentForm).tools = (params as IAgentForm).tools.concat(
       bottomSubAgentEdges.map((x) => {
-        const formData = buildAgentTools(edges, nodes, x.target);
+        const {
+          params: formData,
+          id,
+          name,
+        } = buildAgentTools(edges, nodes, x.target);
 
-        return { component_name: Operator.Agent, params: { ...formData } };
+        return {
+          component_name: Operator.Agent,
+          id,
+          name: name as string, // Cast name to string and provide fallback
+          params: { ...formData },
+        };
       }),
     );
   }
-  return params;
+  return { params, name: node?.data.name, id: node?.id };
+}
+
+function filterTargetsBySourceHandleId(edges: Edge[], handleId: string) {
+  return edges.filter((x) => x.sourceHandle === handleId).map((x) => x.target);
+}
+
+function buildCategorize(edges: Edge[], nodes: Node[], nodeId: string) {
+  const node = nodes.find((x) => x.id === nodeId);
+  const params = { ...(node?.data.form ?? {}) } as ICategorizeForm;
+  if (node && node.data.label === Operator.Categorize) {
+    const subEdges = edges.filter((x) => x.source === nodeId);
+
+    const items = params.items || [];
+
+    const nextCategoryDescription = items.reduce<
+      ICategorizeForm['category_description']
+    >((pre, val) => {
+      const key = val.name;
+      pre[key] = {
+        ...omit(val, 'name', 'uuid'),
+        examples: val.examples?.map((x) => x.value) || [],
+        to: filterTargetsBySourceHandleId(subEdges, val.uuid),
+      };
+      return pre;
+    }, {});
+
+    params.category_description = nextCategoryDescription;
+  }
+  return omit(params, 'items');
 }
 
 const buildOperatorParams = (operatorName: string) =>
@@ -190,8 +229,22 @@ export const buildDslComponentsByGraph = (
     .forEach((x) => {
       const id = x.id;
       const operatorName = x.data.label;
+      let params = x?.data.form ?? {};
 
-      const params = buildAgentTools(edges, nodes, id);
+      switch (operatorName) {
+        case Operator.Agent: {
+          const { params: formData } = buildAgentTools(edges, nodes, id);
+          params = formData;
+          break;
+        }
+        case Operator.Categorize:
+          params = buildCategorize(edges, nodes, id);
+          break;
+
+        default:
+          break;
+      }
+
       components[id] = {
         obj: {
           ...(oldDslComponents[id]?.obj ?? {}),
@@ -515,6 +568,11 @@ export const buildCategorizeObjectFromList = (list: Array<ICategorizeItem>) => {
 
 export function getAgentNodeTools(agentNode?: RAGFlowNodeType) {
   const tools: IAgentForm['tools'] = get(agentNode, 'data.form.tools', []);
+  return tools;
+}
+
+export function getAgentNodeMCP(agentNode?: RAGFlowNodeType) {
+  const tools: IAgentForm['mcp'] = get(agentNode, 'data.form.mcp', []);
   return tools;
 }
 

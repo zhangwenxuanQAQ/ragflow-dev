@@ -20,7 +20,6 @@ import {
 import { ModelVariableType } from '@/constants/knowledge';
 import i18n from '@/locales/config';
 import { setInitialChatVariableEnabledFieldValue } from '@/utils/chat';
-import { omit } from 'lodash';
 
 // DuckDuckGo's channel options
 export enum Channel {
@@ -34,6 +33,8 @@ export enum PromptRole {
 }
 
 import {
+  Circle,
+  CircleSlash2,
   CloudUpload,
   ListOrdered,
   OptionIcon,
@@ -81,11 +82,12 @@ export enum Operator {
   Email = 'Email',
   Iteration = 'Iteration',
   IterationStart = 'IterationItem',
-  Code = 'Code',
+  Code = 'CodeExec',
   WaitingDialogue = 'WaitingDialogue',
   Agent = 'Agent',
   Tool = 'Tool',
   TavilySearch = 'TavilySearch',
+  TavilyExtract = 'TavilyExtract',
   UserFillUp = 'UserFillUp',
   StringTransform = 'StringTransform',
 }
@@ -112,148 +114,6 @@ export const AgentOperatorList = [
   Operator.Note,
   Operator.Agent,
 ];
-
-export const operatorMap: Record<
-  Operator,
-  {
-    backgroundColor?: string;
-    color?: string;
-    width?: number;
-    height?: number;
-    fontSize?: number;
-    iconFontSize?: number;
-    iconWidth?: number;
-    moreIconColor?: string;
-  }
-> = {
-  [Operator.Retrieval]: {
-    backgroundColor: '#cad6e0',
-    color: '#385974',
-  },
-  [Operator.Generate]: {
-    backgroundColor: '#ebd6d6',
-    width: 150,
-    height: 150,
-    fontSize: 20,
-    iconFontSize: 30,
-    color: '#996464',
-  },
-  [Operator.Answer]: {
-    backgroundColor: '#f4816d',
-    color: '#f4816d',
-  },
-  [Operator.Begin]: {
-    backgroundColor: '#4f51d6',
-  },
-  [Operator.Categorize]: {
-    backgroundColor: '#ffebcd',
-    color: '#cc8a26',
-  },
-  [Operator.Message]: {
-    backgroundColor: '#c5ddc7',
-    color: 'green',
-  },
-  [Operator.Relevant]: {
-    backgroundColor: '#9fd94d',
-    color: '#8ef005',
-    width: 70,
-    height: 70,
-    fontSize: 12,
-    iconFontSize: 16,
-  },
-  [Operator.RewriteQuestion]: {
-    backgroundColor: '#f8c7f8',
-    color: '#f32bf3',
-    width: 70,
-    height: 70,
-    fontSize: 12,
-    iconFontSize: 16,
-  },
-  [Operator.KeywordExtract]: {
-    width: 70,
-    height: 70,
-    backgroundColor: '#6E5494',
-    color: '#6E5494',
-    fontSize: 12,
-    iconWidth: 16,
-  },
-  [Operator.DuckDuckGo]: {
-    backgroundColor: '#e7e389',
-    color: '#aea00c',
-  },
-  [Operator.Baidu]: {
-    backgroundColor: '#d9e0f8',
-  },
-  [Operator.Wikipedia]: {
-    backgroundColor: '#dee0e2',
-  },
-  [Operator.PubMed]: {
-    backgroundColor: '#a2ccf0',
-  },
-  [Operator.ArXiv]: {
-    width: 70,
-    height: 70,
-    fontSize: 12,
-    iconWidth: 16,
-    iconFontSize: 16,
-    moreIconColor: 'white',
-    backgroundColor: '#b31b1b',
-    color: 'white',
-  },
-  [Operator.Google]: {
-    backgroundColor: 'pink',
-  },
-  [Operator.Bing]: {
-    backgroundColor: '#c0dcc4',
-  },
-  [Operator.GoogleScholar]: {
-    backgroundColor: '#b4e4f6',
-  },
-  [Operator.DeepL]: {
-    backgroundColor: '#f5e8e6',
-  },
-  [Operator.GitHub]: {
-    backgroundColor: 'purple',
-    color: 'purple',
-  },
-  [Operator.BaiduFanyi]: { backgroundColor: '#e5f2d3' },
-  [Operator.QWeather]: {
-    backgroundColor: '#a4bbf3',
-    color: '#a4bbf3',
-  },
-  [Operator.ExeSQL]: { backgroundColor: '#b9efe8' },
-  [Operator.Switch]: { backgroundColor: '#dbaff6', color: '#dbaff6' },
-  [Operator.WenCai]: { backgroundColor: '#faac5b' },
-  [Operator.AkShare]: { backgroundColor: '#8085f5' },
-  [Operator.YahooFinance]: { backgroundColor: '#b474ff' },
-  [Operator.Jin10]: { backgroundColor: '#a0b9f8' },
-  [Operator.Concentrator]: {
-    backgroundColor: '#32d2a3',
-    color: '#32d2a3',
-    width: 70,
-    height: 70,
-    fontSize: 10,
-    iconFontSize: 16,
-  },
-  [Operator.TuShare]: { backgroundColor: '#f8cfa0' },
-  [Operator.Note]: { backgroundColor: '#f8cfa0' },
-  [Operator.Crawler]: {
-    backgroundColor: '#dee0e2',
-  },
-  [Operator.Invoke]: {
-    backgroundColor: '#dee0e2',
-  },
-  [Operator.Template]: {
-    backgroundColor: '#dee0e2',
-  },
-  [Operator.Email]: { backgroundColor: '#e6f7ff' },
-  [Operator.Iteration]: { backgroundColor: '#e6f7ff' },
-  [Operator.IterationStart]: { backgroundColor: '#e6f7ff' },
-  [Operator.Code]: { backgroundColor: '#4c5458' },
-  [Operator.WaitingDialogue]: { backgroundColor: '#a5d65c' },
-  [Operator.Agent]: { backgroundColor: '#a5d65c' },
-  [Operator.TavilySearch]: { backgroundColor: '#a5d65c' },
-};
 
 export const componentMenuList = [
   {
@@ -378,8 +238,16 @@ export const SwitchOperatorOptions = [
   { value: 'not contains', label: 'notContains', icon: 'not-contains' },
   { value: 'start with', label: 'startWith', icon: 'list-start' },
   { value: 'end with', label: 'endWith', icon: 'list-end' },
-  { value: 'empty', label: 'empty', icon: 'circle' },
-  { value: 'not empty', label: 'notEmpty', icon: 'circle-slash-2' },
+  {
+    value: 'empty',
+    label: 'empty',
+    icon: <Circle className="size-4" />,
+  },
+  {
+    value: 'not empty',
+    label: 'notEmpty',
+    icon: <CircleSlash2 className="size-4" />,
+  },
 ];
 
 export const SwitchElseTo = 'end_cpn_ids';
@@ -397,6 +265,8 @@ export const initialRetrievalValues = {
   empty_response: '',
   ...initialSimilarityThresholdValue,
   ...initialKeywordsSimilarityWeightValue,
+  use_kg: false,
+  cross_languages: [],
   outputs: {
     formalized_content: {
       type: 'string',
@@ -451,11 +321,16 @@ export const initialCategorizeValues = {
   query: AgentGlobals.SysQuery,
   parameter: ModelVariableType.Precise,
   message_history_window_size: 1,
-  category_description: {},
+  items: [],
+  outputs: {
+    category_name: {
+      type: 'string',
+    },
+  },
 };
 
 export const initialMessageValues = {
-  messages: [],
+  content: [''],
 };
 
 export const initialKeywordExtractValues = {
@@ -493,11 +368,23 @@ export const initialArXivValues = {
 };
 
 export const initialGoogleValues = {
+  q: AgentGlobals.SysQuery,
+  start: 0,
+  num: 12,
   top_n: 10,
-  api_key: 'YOUR_API_KEY (obtained from https://serpapi.com/manage-api-key)',
+  api_key: '',
   country: 'cn',
   language: 'en',
-  ...initialQueryBaseValues,
+  outputs: {
+    formalized_content: {
+      value: '',
+      type: 'string',
+    },
+    json: {
+      value: [],
+      type: 'Array<Object>',
+    },
+  },
 };
 
 export const initialBingValues = {
@@ -507,7 +394,7 @@ export const initialBingValues = {
     'YOUR_API_KEY (obtained from https://www.microsoft.com/en-us/bing/apis/bing-web-search-api)',
   country: 'CH',
   language: 'en',
-  ...initialQueryBaseValues,
+  query: '',
 };
 
 export const initialGoogleScholarValues = {
@@ -543,16 +430,14 @@ export const initialQWeatherValues = {
 };
 
 export const initialExeSqlValues = {
-  ...initialLlmBaseValues,
+  sql: '',
   db_type: 'mysql',
   database: '',
   username: '',
   host: '',
   port: 3306,
   password: '',
-  loop: 3,
-  top_n: 30,
-  ...initialQueryBaseValues,
+  max_records: 1024,
 };
 
 export const initialSwitchValues = {
@@ -579,13 +464,19 @@ export const initialWenCaiValues = {
 export const initialAkShareValues = { top_n: 10, ...initialQueryBaseValues };
 
 export const initialYahooFinanceValues = {
+  stock_code: '',
   info: true,
   history: false,
   financials: false,
   balance_sheet: false,
   cash_flow_statement: false,
   news: true,
-  ...initialQueryBaseValues,
+  outputs: {
+    report: {
+      value: '',
+      type: 'string',
+    },
+  },
 };
 
 export const initialJin10Values = {
@@ -612,7 +503,7 @@ export const initialNoteValues = {
 
 export const initialCrawlerValues = {
   extract_type: 'markdown',
-  ...initialQueryBaseValues,
+  query: '',
 };
 
 export const initialInvokeValues = {
@@ -661,16 +552,13 @@ export const initialIterationStartValues = {
 };
 
 export const initialCodeValues = {
-  lang: 'python',
+  lang: ProgrammingLanguage.Python,
   script: CodeTemplateStrMap[ProgrammingLanguage.Python],
-  arguments: [
-    {
-      name: 'arg1',
-    },
-    {
-      name: 'arg2',
-    },
-  ],
+  arguments: {
+    arg1: '',
+    arg2: '',
+  },
+  outputs: {},
 };
 
 export const initialWaitingDialogueValues = {};
@@ -678,6 +566,7 @@ export const initialWaitingDialogueValues = {};
 export const initialAgentValues = {
   ...initialLlmBaseValues,
   description: '',
+  user_prompt: '',
   sys_prompt: ``,
   prompts: [{ role: PromptRole.User, content: `{${AgentGlobals.SysQuery}}` }],
   message_history_window_size: 12,
@@ -689,6 +578,7 @@ export const initialAgentValues = {
   exception_comment: '',
   exception_goto: '',
   tools: [],
+  mcp: [],
   outputs: {
     structured_output: {
       // topic: {
@@ -710,6 +600,7 @@ export const initialUserFillUpValues = {
   enable_tips: true,
   tips: '',
   inputs: [],
+  outputs: {},
 };
 
 export enum StringTransformMethod {
@@ -767,8 +658,34 @@ export const initialTavilyValues = {
       type: 'string',
     },
     json: {
-      value: {},
-      type: 'Object',
+      value: [],
+      type: 'Array<Object>',
+    },
+  },
+};
+
+export enum TavilyExtractDepth {
+  Basic = 'basic',
+  Advanced = 'advanced',
+}
+
+export enum TavilyExtractFormat {
+  Text = 'text',
+  Markdown = 'markdown',
+}
+
+export const initialTavilyExtractValues = {
+  urls: '',
+  extract_depth: TavilyExtractDepth.Basic,
+  format: TavilyExtractFormat.Markdown,
+  outputs: {
+    formalized_content: {
+      value: '',
+      type: 'string',
+    },
+    json: {
+      value: [],
+      type: 'Array<Object>',
     },
   },
 };
@@ -858,8 +775,10 @@ export const RestrictedUpstreamMap = {
   [Operator.WaitingDialogue]: [Operator.Begin],
   [Operator.Agent]: [Operator.Begin],
   [Operator.TavilySearch]: [Operator.Begin],
+  [Operator.TavilyExtract]: [Operator.Begin],
   [Operator.StringTransform]: [Operator.Begin],
   [Operator.UserFillUp]: [Operator.Begin],
+  [Operator.Tool]: [Operator.Begin],
 };
 
 export const NodeMap = {
@@ -906,6 +825,7 @@ export const NodeMap = {
   [Operator.TavilySearch]: 'ragNode',
   [Operator.UserFillUp]: 'ragNode',
   [Operator.StringTransform]: 'ragNode',
+  [Operator.TavilyExtract]: 'ragNode',
 };
 
 export enum BeginQueryType {
@@ -935,6 +855,7 @@ export const NoDebugOperatorsList = [
   Operator.RewriteQuestion,
   Operator.Switch,
   Operator.Iteration,
+  Operator.UserFillUp,
 ];
 
 export enum NodeHandleId {
@@ -950,16 +871,6 @@ export enum VariableType {
   Array = 'array',
   File = 'file',
 }
-
-export const DefaultAgentToolValuesMap = {
-  [Operator.Retrieval]: {
-    ...omit(initialRetrievalValues, 'query'),
-    description: '',
-  },
-  [Operator.TavilySearch]: {
-    api_key: '',
-  },
-};
 
 export enum AgentExceptionMethod {
   Comment = 'comment',

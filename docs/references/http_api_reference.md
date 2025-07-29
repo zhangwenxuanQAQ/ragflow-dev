@@ -410,7 +410,7 @@ curl --request POST \
       - Minimum: `0`
       - Maximum: `10`
     - `"chunk_token_num"`: `int`
-      - Defaults to `128`
+      - Defaults to `512`
       - Minimum: `1`
       - Maximum: `2048`
     - `"delimiter"`: `string`
@@ -631,7 +631,7 @@ curl --request PUT \
       - Minimum: `0`
       - Maximum: `10`
     - `"chunk_token_num"`: `int`
-      - Defaults to `128`
+      - Defaults to `512`
       - Minimum: `1`
       - Maximum: `2048`
     - `"delimiter"`: `string`
@@ -766,7 +766,132 @@ Failure:
     "message": "The dataset doesn't exist"
 }
 ```
+ ---
 
+## Get dataset's knowledge graph
+
+**GET** `/api/v1/datasets/{dataset_id}/knowledge_graph`
+
+Retrieves the knowledge graph of a specified dataset.
+
+#### Request
+
+- Method: GET
+- URL: `/api/v1/datasets/{dataset_id}/knowledge_graph`
+- Headers:
+  - `'Authorization: Bearer <YOUR_API_KEY>'`
+
+##### Request example
+
+```bash
+curl --request GET \
+     --url http://{address}/api/v1/datasets/{dataset_id}/knowledge_graph \
+     --header 'Authorization: Bearer <YOUR_API_KEY>'
+```
+
+##### Request parameters
+
+- `dataset_id`: (*Path parameter*)  
+  The ID of the target dataset.
+
+#### Response
+
+Success:
+
+```json
+{
+    "code": 0,
+    "data": {
+        "graph": {
+            "directed": false,
+            "edges": [
+                {
+                    "description": "The notice is a document issued to convey risk warnings and operational alerts.<SEP>The notice is a specific instance of a notification document issued under the risk warning framework.",
+                    "keywords": ["9", "8"],
+                    "source": "notice",
+                    "source_id": ["8a46cdfe4b5c11f0a5281a58e595aa1c"],
+                    "src_id": "xxx",
+                    "target": "xxx",
+                    "tgt_id": "xxx",
+                    "weight": 17.0
+                }
+            ],
+            "graph": {
+                "source_id": ["8a46cdfe4b5c11f0a5281a58e595aa1c", "8a7eb6424b5c11f0a5281a58e595aa1c"]
+            },
+            "multigraph": false,
+            "nodes": [
+                {
+                    "description": "xxx",
+                    "entity_name": "xxx",
+                    "entity_type": "ORGANIZATION",
+                    "id": "xxx",
+                    "pagerank": 0.10804906590624092,
+                    "rank": 3,
+                    "source_id": ["8a7eb6424b5c11f0a5281a58e595aa1c"]
+                }
+            ]
+        },
+        "mind_map": {}
+    }
+}
+```
+
+Failure:
+
+```json
+{
+    "code": 102,
+    "message": "The dataset doesn't exist"
+}
+```
+---
+
+## Delete dataset's knowledge graph
+
+**DELETE** `/api/v1/datasets/{dataset_id}/knowledge_graph`
+
+Removes the knowledge graph of a specified dataset.
+
+#### Request
+
+- Method: DELETE
+- URL: `/api/v1/datasets/{dataset_id}/knowledge_graph`
+- Headers:
+  - `'Authorization: Bearer <YOUR_API_KEY>'`
+
+##### Request example
+
+```bash
+curl --request DELETE \
+     --url http://{address}/api/v1/datasets/{dataset_id}/knowledge_graph \
+     --header 'Authorization: Bearer <YOUR_API_KEY>'
+```
+
+##### Request parameters
+
+- `dataset_id`: (*Path parameter*)  
+  The ID of the target dataset.
+
+#### Response
+
+Success:
+
+```json
+{
+    "code": 0,
+    "data": true
+}
+```
+
+Failure:
+
+```json
+{
+    "code": 102,
+    "message": "The dataset doesn't exist"
+}
+```
 ---
 
 ## FILE MANAGEMENT WITHIN DATASET
@@ -1058,7 +1183,7 @@ Success:
                 },
                 "chunk_method": "naive",
                 "process_begin_at": null,
-                "process_duation": 0.0,
+                "process_duration": 0.0,
                 "progress": 0.0,
                 "progress_msg": "",
                 "run": "0",
@@ -1417,7 +1542,7 @@ Success:
                 }
             },
             "process_begin_at": "Thu, 24 Oct 2024 09:56:44 GMT",
-            "process_duation": 0.54213,
+            "process_duration": 0.54213,
             "progress": 0.0,
             "progress_msg": "Task dispatched...",
             "run": "2",
@@ -1600,6 +1725,7 @@ Retrieves chunks from specified datasets.
   - `"rerank_id"`: `string`  
   - `"keyword"`: `boolean`  
   - `"highlight"`: `boolean`
+  - `"cross_languages"`: `list[string]`  
 
 ##### Request example
 
@@ -1644,6 +1770,8 @@ curl --request POST \
   Specifies whether to enable highlighting of matched terms in the results:  
   - `true`: Enable highlighting of matched terms.
   - `false`: Disable highlighting of matched terms (default).
+- `"cross_languages"`: (*Body parameter*) `list[string]`  
+  The languages that should be translated into, in order to achieve keywords retrievals in different languages.
 
 #### Response
 
@@ -3228,7 +3356,7 @@ Generates five to ten alternative question strings from the user's original quer
 
 This operation requires a `Bearer Login Token`, which typically expires with in 24 hours. You can find the it in the Request Headers in your browser easily as shown below:
 
-![Image](https://github.com/user-attachments/assets/17a5a0fe-e411-4e35-8251-85c71444468b)
+![Image](https://raw.githubusercontent.com/infiniflow/ragflow-docs/main/images/login_token.jpg)
 
 :::tip NOTE
 The chat model autonomously determines the number of questions to generate based on the instruction, typically between five and ten.

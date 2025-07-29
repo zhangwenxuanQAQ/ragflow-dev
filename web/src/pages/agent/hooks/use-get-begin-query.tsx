@@ -12,6 +12,14 @@ import { buildBeginInputListFromObject } from '../form/begin-form/utils';
 import { BeginQuery } from '../interface';
 import useGraphStore from '../store';
 
+export function useSelectBeginNodeDataInputs() {
+  const getNode = useGraphStore((state) => state.getNode);
+
+  return buildBeginInputListFromObject(
+    getNode(BeginId)?.data?.form?.inputs ?? {},
+  );
+}
+
 export const useGetBeginNodeDataQuery = () => {
   const getNode = useGraphStore((state) => state.getNode);
 
@@ -24,17 +32,29 @@ export const useGetBeginNodeDataQuery = () => {
   return getBeginNodeDataQuery;
 };
 
+export const useGetBeginNodeDataInputs = () => {
+  const getNode = useGraphStore((state) => state.getNode);
+
+  const inputs = get(getNode(BeginId), 'data.form.inputs', {});
+
+  const beginNodeDataInputs = useMemo(() => {
+    return buildBeginInputListFromObject(inputs);
+  }, [inputs]);
+
+  return beginNodeDataInputs;
+};
+
 export const useGetBeginNodeDataQueryIsSafe = () => {
   const [isBeginNodeDataQuerySafe, setIsBeginNodeDataQuerySafe] =
     useState(false);
-  const getBeginNodeDataQuery = useGetBeginNodeDataQuery();
+  const inputs = useSelectBeginNodeDataInputs();
   const nodes = useGraphStore((state) => state.nodes);
 
   useEffect(() => {
-    const query: BeginQuery[] = getBeginNodeDataQuery();
+    const query: BeginQuery[] = inputs;
     const isSafe = !query.some((q) => !q.optional && q.type === 'file');
     setIsBeginNodeDataQuerySafe(isSafe);
-  }, [getBeginNodeDataQuery, nodes]);
+  }, [inputs, nodes]);
 
   return isBeginNodeDataQuerySafe;
 };
@@ -120,22 +140,21 @@ function transferToVariableType(type: string) {
 }
 
 export function useBuildBeginVariableOptions() {
-  const getBeginNodeDataQuery = useGetBeginNodeDataQuery();
+  const inputs = useSelectBeginNodeDataInputs();
 
   const options = useMemo(() => {
-    const query: BeginQuery[] = getBeginNodeDataQuery();
     return [
       {
         label: <span>Begin Input</span>,
         title: 'Begin Input',
-        options: query.map((x) => ({
+        options: inputs.map((x) => ({
           label: x.name,
           value: `begin@${x.key}`,
           type: transferToVariableType(x.type),
         })),
       },
     ];
-  }, [getBeginNodeDataQuery]);
+  }, [inputs]);
 
   return options;
 }
@@ -152,9 +171,9 @@ export const useBuildVariableOptions = (nodeId?: string, parentId?: string) => {
   return options;
 };
 
-export function useBuildQueryVariableOptions() {
+export function useBuildQueryVariableOptions(n?: RAGFlowNodeType) {
   const { data } = useFetchAgent();
-  const node = useContext(AgentFormContext);
+  const node = useContext(AgentFormContext) || n;
   const options = useBuildVariableOptions(node?.id, node?.parentId);
 
   const nextOptions = useMemo(() => {
@@ -170,7 +189,7 @@ export function useBuildQueryVariableOptions() {
       { ...options[0], options: [...options[0]?.options, ...globalOptions] },
       ...options.slice(1),
     ];
-  }, [data.dsl.globals, options]);
+  }, [data.dsl?.globals, options]);
 
   return nextOptions;
 }
@@ -241,3 +260,22 @@ export const useGetComponentLabelByValue = (nodeId: string) => {
   );
   return getLabel;
 };
+
+export function useGetVariableLabelByValue(nodeId: string) {
+  const { getNode } = useGraphStore((state) => state);
+  const nextOptions = useBuildQueryVariableOptions(getNode(nodeId));
+
+  const flattenOptions = useMemo(() => {
+    return nextOptions.reduce<DefaultOptionType[]>((pre, cur) => {
+      return [...pre, ...cur.options];
+    }, []);
+  }, [nextOptions]);
+
+  const getLabel = useCallback(
+    (val?: string) => {
+      return flattenOptions.find((x) => x.value === val)?.label;
+    },
+    [flattenOptions],
+  );
+  return getLabel;
+}
